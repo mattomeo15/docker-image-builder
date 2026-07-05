@@ -1,31 +1,19 @@
-#!/bin/sh
+#!/bin/bash
 
-# Start the Docker daemon in the background using VFS storage driver
-# for reliability in containerized/unprivileged environments.
-echo "Starting internal Docker daemon..."
-dockerd --storage-driver=vfs --data-root=/var/lib/docker > /var/log/dockerd.log 2>&1 &
+echo "[INIT] Starting internal Docker-in-Docker Daemon..."
 
-# Wait for Docker socket to appear
-echo "Waiting for Docker daemon to become ready..."
-TIMEOUT=30
-while [ ! -S /var/run/docker.sock ]; do
-  TIMEOUT=$((TIMEOUT - 1))
-  if [ $TIMEOUT -le 0 ]; then
-    echo "❌ ERROR: Docker daemon failed to start within 30 seconds."
-    echo "=== Daemon Logs ==="
-    cat /var/log/dockerd.log
-    echo "==================="
-    break
-  fi
-  sleep 1
+# Start the Docker daemon in the background and redirect logs
+dockerd --host=unix:///var/run/docker.sock > /var/log/dockerd.log 2>&1 &
+
+# Loop and wait until the docker socket file exists and is responsive
+echo "[INIT] Waiting for Docker daemon to initialize..."
+while ! docker info >/dev/null 2>&1; do
+    echo "[INIT] Still waiting for internal Docker socket..."
+    sleep 1
 done
 
-if [ -S /var/run/docker.sock ]; then
-  echo "✅ Docker daemon is up and running!"
-  docker info || echo "Could not run 'docker info', but socket is present."
-else
-  echo "⚠️ Continuing boot process without active Docker socket."
-fi
+echo "[INIT] Internal Docker Daemon is fully up and running!"
+echo "[INIT] Launching Node.js application server..."
 
-# Hand over to CMD
-exec "$@"
+# Start your Node.js application
+exec node server.js
