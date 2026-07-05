@@ -1,27 +1,24 @@
-# Use the official Docker-in-Docker image as the base
 FROM docker:24.0-dind
 
 # Install Node.js, npm, and bash
 RUN apk add --no-cache nodejs npm bash
 
-# Set the working directory
+# Switch the working directory to match the backend path exactly
 WORKDIR /app
 
-# Copy dependency definitions first for caching efficiency
+# Copy dependency definitions
 COPY package*.json ./
-
-# Install project dependencies
 RUN npm install
 
-# Copy the rest of your application code
+# Copy your source files into /app
 COPY . .
 
-# Copy and make the startup script executable
+# Ensure the workspace directory expected by the app exists inside the image
+RUN mkdir -p /app/docker-workspace
+
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Expose your web app port
 EXPOSE 3000
 
-# Fire up the custom entrypoint script
 ENTRYPOINT ["/entrypoint.sh"]
