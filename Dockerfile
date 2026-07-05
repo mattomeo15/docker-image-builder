@@ -1,39 +1,27 @@
-# Use a lightweight Node.js Alpine base image
-FROM node:20-alpine
+# Use the official Docker-in-Docker image as the base
+FROM docker:24.0-dind
 
-# Install Docker (CLI and daemon), Git, and network tools for image builds
-RUN apk add --no-cache docker git iptables ca-certificates
+# Install Node.js, npm, and bash
+RUN apk add --no-cache nodejs npm bash
 
-# Create app directory
+# Set the working directory
 WORKDIR /app
 
-# Copy package descriptors first to optimize caching
+# Copy dependency definitions first for caching efficiency
 COPY package*.json ./
 
-# Install all npm dependencies (including devDependencies required for typescript build)
+# Install project dependencies
 RUN npm install
 
-# Copy application files
+# Copy the rest of your application code
 COPY . .
 
-# Make entrypoint script executable
-RUN chmod +x /app/entrypoint.sh
+# Copy and make the startup script executable
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Run the build process which bundles frontend static files (Vite) and compiles the Express backend (server.ts)
-RUN npm run build
-
-# Prune dev dependencies to minimize container footprint
-RUN npm prune --production
-
-# Expose the application port
+# Expose your web app port
 EXPOSE 3000
 
-# Set production environment flags
-ENV NODE_ENV=production
-ENV PORT=3000
-
-# Set entrypoint to initialize Docker daemon
-ENTRYPOINT ["/app/entrypoint.sh"]
-
-# Start the built fast-loading full-stack Express server
-CMD ["npm", "run", "start"]
+# Fire up the custom entrypoint script
+ENTRYPOINT ["/entrypoint.sh"]
