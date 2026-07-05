@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # The Web-based Docker Image Builder App
+  app:
+    build: .
+    container_name: docker-image-builder
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DOCKER_HOST=tcp://dind:2375 # Connects automatically to the isolated sibling daemon
+      - DOCKER_HUB_USER=${DOCKER_HUB_USER:-}
+      - DOCKER_HUB_TOKEN=${DOCKER_HUB_TOKEN:-}
+      - PUID=1000
+      - PGID=1000
+    depends_on:
+      dind:
+        condition: service_healthy
+    volumes:
+      - app-data:/app/data
+      - app-workspace:/app/docker-workspace
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+
+  # The Sibling Docker-in-Docker Daemon Service
+  dind:
+    image: docker:dind
+    container_name: docker-builder-dind
+    restart: unless-stopped
+    privileged: true # Required for running a Docker-in-Docker daemon securely
+    environment:
+      - DOCKER_TLS_CERTDIR= # Disables internal TLS certificates for simple internal network routing
+    volumes:
+      - dind-data:/var/lib/docker # Persists downloaded base layers and images
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "docker", "info"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  # Named volumes for state persistence
+  app-data:
+    driver: local
+  app-workspace:
+    driver: local
+  dind-data:
+    driver: local

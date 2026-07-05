@@ -1,0 +1,6 @@
+{
+  "name": "Docker Image Builder",
+  "description": "A web-based platform to visually assemble workspace files, clone public GitHub repositories, and build & push Docker images using Docker-in-Docker.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
