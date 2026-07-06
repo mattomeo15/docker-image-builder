@@ -35,3 +35,70 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+/* ========================================================== */
+/* RESPONSIVE SCALING & SCROLLING RULES FOR SMALL / ZOOMED SCREENS */
+/* ========================================================== */
+
+/* Default / Mobile & Small Viewport (height < 780px or width < 1024px) */
+@media (max-width: 1023px), (max-height: 780px) {
+  .desktop-ide-container {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Make sure main layout fits and scrolls gracefully */
+  .desktop-ide-container main,
+  .desktop-ide-container aside {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+
+  /* Force side-by-side columns to be flexible or stack gracefully if space is restricted */
+  .desktop-ide-container .lg\:flex {
+    height: auto !important;
+    min-height: auto !important;
+    flex-wrap: wrap !important;
+    gap: 16px !important;
+  }
+
+  /* Allow sidebars to expand naturally to full content height */
+  .desktop-ide-container aside {
+    flex: 1 1 300px !important;
+    max-width: 100% !important;
+  }
+
+  /* Give editor a reliable height in scrolling viewport */
+  .desktop-editor-wrapper {
+    height: 480px !important;
+    min-height: 480px !important;
+    flex: none !important;
+  }
+
+  .desktop-editor-wrapper > div {
+    height: 100% !important;
+  }
+
+  /* Give terminal logs a clean readable height in scrolling viewport */
+  .desktop-terminal-wrapper {
+    height: 320px !important;
+    min-height: 320px !important;
+    flex: none !important;
+  }
+  
+  .desktop-terminal-wrapper > div {
+    height: 100% !important;
+  }
+}
+
+/* Large Height & Wide Screen Viewport (Fullscreen locked IDE experience) */
+@media (min-width: 1024px) and (min-height: 781px) {
+  .desktop-ide-container {
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+}
+

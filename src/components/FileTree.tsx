@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { 
   Folder, 
   File, 
@@ -129,6 +129,11 @@ export default function FileTree({
   const [newItemName, setNewItemName] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Collapse all folders by default whenever the file workspace updates (e.g. repo pulled)
+  useEffect(() => {
+    setCollapsedDirs({});
+  }, [files]);
 
   // Toggle collapsing of folders
   const toggleFolder = (dirPath: string) => {

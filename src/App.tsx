@@ -63,6 +63,10 @@ export default function App() {
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState<'files' | 'viewer' | 'console' | 'config'>('files');
 
+  // Interactive console state for terminal header controls (Clear, Minimize/Collapse, Maximize)
+  const [isConsoleCollapsed, setIsConsoleCollapsed] = useState(false);
+  const [isConsoleMaximized, setIsConsoleMaximized] = useState(false);
+
   // Dark theme preference
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return localStorage.getItem('docker-builder-theme') === 'dark';
@@ -387,7 +391,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased overflow-hidden transition-colors duration-200">
+    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased overflow-hidden transition-colors duration-200 desktop-ide-container">
       {/* 1. Global Navigation Top Header */}
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 lg:px-6 py-3 flex items-center justify-between shrink-0 shadow-xs transition-colors duration-200">
         <div className="flex items-center gap-2 lg:gap-3 min-w-0 flex-1 mr-2">
@@ -404,18 +408,18 @@ export default function App() {
         </div>
 
         {/* Credentials / Controls section */}
-        <div className="flex items-center gap-2.5 lg:gap-4 shrink-0">
-          <div className="flex items-center">
+        <div className="flex items-center gap-2.5 lg:gap-4 shrink-0 min-w-0">
+          <div className="flex items-center min-w-0 shrink">
             {creds.isConfigured ? (
-              <span className="flex items-center gap-1.5 text-[10px] lg:text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 px-2.5 py-1.5 rounded-full shadow-2xs">
+              <span className="flex items-center gap-1.5 text-[10px] lg:text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 px-2.5 py-1.5 rounded-full shadow-2xs max-w-[120px] sm:max-w-none min-w-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="hidden sm:inline">Docker Hub: </span><span className="font-mono font-bold">@{creds.username}</span>
+                <span className="hidden sm:inline shrink-0">Docker Hub: </span><span className="font-mono font-bold truncate">@{creds.username}</span>
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-[10px] lg:text-xs font-semibold bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-amber-700 dark:text-amber-400 px-2.5 py-1.5 rounded-full shadow-2xs animate-pulse">
+              <span className="flex items-center gap-1.5 text-[10px] lg:text-xs font-semibold bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-amber-700 dark:text-amber-400 px-2.5 py-1.5 rounded-full shadow-2xs animate-pulse max-w-[120px] sm:max-w-none min-w-0">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span className="hidden sm:inline">Docker Hub Credentials Missing</span>
-                <span className="sm:hidden">Creds Required</span>
+                <span className="hidden sm:inline truncate">Docker Hub Credentials Missing</span>
+                <span className="sm:hidden font-bold truncate">Missing Creds</span>
               </span>
             )}
           </div>
@@ -423,10 +427,10 @@ export default function App() {
           <button 
             id="open-settings"
             onClick={() => setIsSettingsOpen(true)}
-            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800"
+            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800 shrink-0"
             title="Configure Credentials"
           >
-            <Settings className="w-4.5 h-4.5" />
+            <Settings className="w-4.5 h-4.5 shrink-0" />
           </button>
         </div>
       </header>
@@ -456,7 +460,7 @@ export default function App() {
               </div>
             </aside>
           ) : (
-            <aside className="w-80 border-r border-slate-200 dark:border-slate-800 p-4 flex flex-col gap-4 shrink-0 bg-white dark:bg-slate-900 overflow-y-auto relative transition-all duration-300">
+            <aside className="w-96 min-w-[340px] max-w-md border-r border-slate-200 dark:border-slate-800 p-4 flex flex-col gap-4 shrink-0 bg-white dark:bg-slate-900 overflow-y-auto overflow-x-auto relative transition-all duration-300">
               <button
                 onClick={() => setIsLeftSidebarCollapsed(true)}
                 className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shadow-md hover:scale-105 transition-all cursor-pointer z-10"
@@ -548,7 +552,7 @@ export default function App() {
           {/* MIDDLE COLUMN: Interactive File Editor (Top) & Real-time Console Log (Bottom) */}
           <main className="flex-1 flex flex-col p-4 gap-4 min-w-0 bg-slate-50/50 dark:bg-slate-950/40 transition-colors duration-200">
             {/* Top Half: Visual Code Editor */}
-            <div className="flex-1 min-h-[220px]">
+            <div className={`${isConsoleMaximized ? 'hidden' : 'flex-1 min-h-[220px]'} desktop-editor-wrapper`}>
               <FileEditor 
                 path={selectedPath}
                 content={openedFileContent}
@@ -562,11 +566,25 @@ export default function App() {
             </div>
 
             {/* Bottom Half: Real-time Terminal Log Output */}
-            <div className="h-2/5 min-h-[200px]">
+            <div className={`${
+              isConsoleMaximized ? 'flex-1 h-full' : 
+              isConsoleCollapsed ? 'h-auto min-h-0' : 
+              'h-2/5 min-h-[200px]'
+            } desktop-terminal-wrapper`}>
               <Terminal 
                 logs={terminalLogs}
                 onClear={() => setTerminalLogs('')}
                 isRunning={isActionRunning}
+                isCollapsed={isConsoleCollapsed}
+                onToggleCollapse={() => {
+                  setIsConsoleCollapsed(!isConsoleCollapsed);
+                  if (isConsoleMaximized) setIsConsoleMaximized(false);
+                }}
+                isMaximized={isConsoleMaximized}
+                onToggleMaximize={() => {
+                  setIsConsoleMaximized(!isConsoleMaximized);
+                  if (isConsoleCollapsed) setIsConsoleCollapsed(false);
+                }}
               />
             </div>
           </main>
@@ -794,9 +812,9 @@ export default function App() {
         {/* ========================================================== */}
         {/* MOBILE LAYOUT (shown on mobile, hidden on lg screens)       */}
         {/* ========================================================== */}
-        <div className="lg:hidden flex-1 flex flex-col min-h-0 w-full overflow-y-auto p-4 pb-20">
+        <div className="lg:hidden flex-1 flex flex-col min-h-0 w-full p-4 pb-20 overflow-y-auto">
           {activeMobileTab === 'files' && (
-            <div className="flex-1 flex flex-col gap-4">
+            <div className="flex-1 flex flex-col gap-4 overflow-y-auto pb-6">
               <div className="flex-1 min-h-[350px]">
                 <FileTree 
                   files={files}
@@ -853,8 +871,8 @@ export default function App() {
                     >
                       {isCloning ? (
                         <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          Pulling Repository...
+                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                           Pulling Repository...
                         </>
                       ) : (
                         <>
@@ -880,7 +898,7 @@ export default function App() {
           )}
 
           {activeMobileTab === 'viewer' && (
-            <div className="flex-1 flex flex-col min-h-[300px]">
+            <div className="flex-1 flex flex-col min-h-[450px]">
               <FileEditor 
                 path={selectedPath}
                 content={openedFileContent}
@@ -895,7 +913,7 @@ export default function App() {
           )}
 
           {activeMobileTab === 'console' && (
-            <div className="flex-1 flex flex-col min-h-[300px]">
+            <div className="flex-1 flex flex-col min-h-[350px]">
               <Terminal 
                 logs={terminalLogs}
                 onClear={() => setTerminalLogs('')}
@@ -905,7 +923,7 @@ export default function App() {
           )}
 
           {activeMobileTab === 'config' && (
-            <div className="flex-1 flex flex-col gap-4">
+            <div className="flex-1 flex flex-col gap-4 overflow-y-auto pb-10">
               {/* Action Trigger Block */}
               <div className="border border-slate-100 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
                 <div className="bg-slate-50 dark:bg-slate-950/40 border-b border-slate-100/80 dark:border-slate-800/60 px-4 py-2.5 flex items-center gap-2">

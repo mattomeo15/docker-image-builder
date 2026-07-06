@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Save, RefreshCw, X, FileEdit, CheckCircle, Volume2, Image as ImageIcon } from 'lucide-react';
 
 interface FileEditorProps {
@@ -20,12 +20,22 @@ export default function FileEditor({
   const [hasChanges, setHasChanges] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
 
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   // Sync content when file path changes
   useEffect(() => {
     setEditedContent(initialContent);
     setHasChanges(false);
     setSaveStatus('idle');
   }, [path, initialContent]);
+
+  // Synchronize scrolling between textarea and line numbers
+  const handleScroll = () => {
+    if (textareaRef.current && lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+  };
 
   if (!path) {
     return (
@@ -170,24 +180,29 @@ export default function FileEditor({
           /* Raw Code Text Area */
           <>
             {/* Line Numbers Sim */}
-            <div className="w-12 bg-slate-50 dark:bg-slate-950 border-r border-slate-100 dark:border-slate-800 py-4 select-none text-right pr-3 font-mono text-xs text-slate-300 dark:text-slate-700 space-y-1 shrink-0">
+            <div 
+              ref={lineNumbersRef}
+              className="w-12 bg-slate-50 dark:bg-slate-950 border-r border-slate-100 dark:border-slate-800 py-4 select-none text-right pr-3 font-mono text-xs text-slate-300 dark:text-slate-700 shrink-0 overflow-hidden h-full"
+            >
               {Array.from({ length: Math.max(15, editedContent.split('\n').length) }).map((_, idx) => (
-                <div key={idx}>{idx + 1}</div>
+                <div key={idx} className="h-[20px] leading-[20px]">{idx + 1}</div>
               ))}
             </div>
 
             {/* Text Area */}
             <textarea 
+              ref={textareaRef}
               id="editor-textarea"
               value={editedContent}
               onChange={e => {
                 setEditedContent(e.target.value);
                 setHasChanges(true);
               }}
+              onScroll={handleScroll}
               onKeyDown={handleKeyDown}
               placeholder="# Write code or Dockerfile settings here..."
               spellCheck={false}
-              className="flex-1 h-full p-4 font-mono text-xs text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 focus:outline-hidden resize-none leading-relaxed overflow-y-auto"
+              className="flex-1 h-full p-4 font-mono text-xs text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 focus:outline-hidden resize-none leading-[20px] overflow-y-auto"
             />
           </>
         )}
